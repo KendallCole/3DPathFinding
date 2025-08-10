@@ -5,6 +5,9 @@ Currently, Roblox’s built-in PathfindingService is mainly intended for ground-
 
 The operations are costly and exponentially scale as graphs get larger. Don't use in a hotpath. Cache/reuse paths when possible!  
 
+![PathfindingGif](https://github.com/user-attachments/assets/e895af4a-e6f8-49fb-a773-7391cfc2c2c6)
+
+
 ## Basic usage:
 ```
 
@@ -29,4 +32,5 @@ local path = Pathfinding3d:FindPath(graph, startNode, endNode)
 
 -- Visualize nodes
 Pathfinding3d:VisualizeNodes(graph, 10)
+
 ```
