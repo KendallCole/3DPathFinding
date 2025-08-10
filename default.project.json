@@ -1,0 +1,13 @@
+{
+  "name": "3DPathFinding",
+  "tree": {
+    "$className": "DataModel",
+
+    "ReplicatedStorage": {
+        "$path": "src"
+        "$ignoreUnknownInstances": true
+    }
+
+  }
+  
+}
