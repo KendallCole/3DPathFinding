@@ -154,28 +154,40 @@ function Pathfinding3d:CreateGraph(
 end
 
 
-function Pathfinding3d:VisualizeNodes(grid: {Types.Node}, debugPartScale: number?, color: Color3?, lifetime: number?)
+function Pathfinding3d:VisualizeNodes(grid: {Types.Node}, lifetime: number?, partProperties: {[string]: any}?): ({[Types.Node]: Part}, Model)
     local nodeToPartMap = {}
+   
+    
+
+    local model = Instance.new("Model")
+    model.Parent = workspace
+    model.Name = "NodeVisualizer"
 
     for _, node in grid do
         
+     
         local part = Instance.new("Part")
-        part.Size = Vector3.new(1,1,1) * (debugPartScale or node.Size) 
+        part.Size = Vector3.new(1,1,1) * node.Size 
         part.Position = node.Position
         part.Anchored = true
         part.CanCollide = false
-        part.Color = color or Color3.new(0, 1, 0)
-        part.Parent = workspace
-
+        part.Color = Color3.new(0, 1, 0)
+        part.Parent = model
         nodeToPartMap[node] = part
-        if lifetime then
+
+        if partProperties then
+            for key, val in partProperties do
+                part[key] = val
+            end
+        end
+        if lifetime ~= nil then
             task.delay(lifetime, function()
-                if part and part:IsDescendantOf(workspace) then
-                    part:Destroy()
-                end
+                if model and model:IsDescendantOf(workspace) then
+                    model:Destroy()
+                end                
             end)
         end
-        -- @DEBUG
+        -- @DEBUG way to also check a node's neigbors... 
         -- for _, neighbor in node.Neighbors do
 
         --     local neighborPart = nodeToPartMap[neighbor]
@@ -183,9 +195,8 @@ function Pathfinding3d:VisualizeNodes(grid: {Types.Node}, debugPartScale: number
         --         neighborPart.BrickColor = BrickColor.Black()
         --     end
         -- end
-
     end
-    return nodeToPartMap
+    return nodeToPartMap, model
 end
 
 

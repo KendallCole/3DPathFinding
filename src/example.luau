@@ -2,25 +2,7 @@ local example = {}
 
 local Pathfinding3d = require(game.ReplicatedStorage.Pathfinding3d)
 
-local CACHED_GRAPH = nil
-function getCachedGraphOrMakeNew(positionIfNotCached: Vector3)
-	local GRAPH_LIFETIME = 3
-
-	if CACHED_GRAPH then
-		return CACHED_GRAPH
-	end
-	local graph = Pathfinding3d:CreateGraph(Vector3.new(100, 100, 100), CFrame.new(positionIfNotCached), 0.075, 1)
-
-	print("Generating new graph...")
-    CACHED_GRAPH = graph
-	task.delay(GRAPH_LIFETIME, function()
-		CACHED_GRAPH = nil
-	end)
-	return graph
-end
-
-
-function example:Run()
+function example:Run() -- Parented in ServerScriptService, needs somewhere else to require and run if you're demoing!
 	local enemyObj = createEnemy()
 
 	while task.wait(.1) do
@@ -33,7 +15,8 @@ function example:Run()
 
 		local distance = (targetPart.Position - enemyObj.enemyModel.Position).Magnitude
 
-        -- 
+        -- If the enemy is too far, or doesn't have anything directly in the way
+		-- we can head towrards them instread costly pathfinding  
 		if not hasSomethingBetweenEnemyAndPlayer(enemyObj.enemyModel, targetPart.Parent) or distance > 100 then
 			enemyObj.alignPosition.Position = targetPart.Position
         else
@@ -52,8 +35,12 @@ function example:Run()
     			enemyObj.alignPosition.Position = targetPart.Position
                 continue
             end
-            Pathfinding3d:VisualizeNodes(path, 1.5, Color3.new(0, 1, 1), 3)
+			-- Just walk the path we made
+			-- For your use case you'd probably add some way to abort if the goal has changed 
+           
+			local _, curPathVisualizer = Pathfinding3d:VisualizeNodes(path, nil)
             if path then
+				print("Path made... Following it!")
                 for _, node in path do
                     local TIME_BEFORE_GIVING_UP = 3
                     local startTime = os.clock()
@@ -62,11 +49,34 @@ function example:Run()
                         task.wait()
                     end
                 end
-                print("Path complete!")
+                print("Path complete!")	
+				curPathVisualizer:Destroy()
+
             end
 		end
     end
 end
+
+
+
+local CACHED_GRAPH = nil
+function getCachedGraphOrMakeNew(positionIfNotCached: Vector3)
+	local GRAPH_LIFETIME = 3
+
+	if CACHED_GRAPH then
+		return CACHED_GRAPH
+	end
+	local graph = Pathfinding3d:CreateGraph(Vector3.new(100, 100, 100), CFrame.new(positionIfNotCached), 0.075, 3)
+	Pathfinding3d:VisualizeNodes(graph, 2, {["BrickColor"] = BrickColor.Green(), ["Transparency"] = 0.1})
+
+	print("Generating new graph...")
+    CACHED_GRAPH = graph
+	task.delay(GRAPH_LIFETIME, function()
+		CACHED_GRAPH = nil
+	end)
+	return graph
+end
+
 
 function createEnemy(): { enemyModel: Part, alignPosition: AlignPosition, state: string }
 	local enemy = Instance.new("Part")
@@ -81,7 +91,7 @@ function createEnemy(): { enemyModel: Part, alignPosition: AlignPosition, state:
 	alignPosition.Attachment0 = attachment
 	alignPosition.MaxForce = 10000
 	alignPosition.Responsiveness = 50
-	alignPosition.MaxVelocity = 8
+	alignPosition.MaxVelocity = 10
 	alignPosition.Parent = enemy
 
 	enemy.Parent = workspace
@@ -111,7 +121,7 @@ function findNearestPlayerPrimaryPart(enemy: Part): Part?
 	return nearestPlayer and nearestPlayer.Character and nearestPlayer.Character.PrimaryPart or nil
 end
 
-function hasSomethingBetweenEnemyAndPlayer(enemy: Part, playerCharacter: Model & any, raycastParams: RaycastParams)
+function hasSomethingBetweenEnemyAndPlayer(enemy: Part, playerCharacter: Model & any)
   
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
@@ -128,9 +138,6 @@ function hasSomethingBetweenEnemyAndPlayer(enemy: Part, playerCharacter: Model &
 
     local raycastResult = workspace:Raycast(startPos, dirUnit * distance, params)
 
-    if raycastResult == nil then
-        print("Nothing in the way")
-    end
     return not (raycastResult == nil)
 end
 
